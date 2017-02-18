@@ -44,7 +44,7 @@ def get_address(bs_obj):
 
 
 def create_csv(csv_path, name, address, url):
-    csv_file = open(csv_path, 'w+', newline='')
+    csv_file = open(csv_path, 'a', newline='')
     try:
         writer = csv.writer(csv_file)
         writer.writerow(('name', 'address', 'url'))

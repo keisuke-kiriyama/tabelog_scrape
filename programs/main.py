@@ -63,31 +63,51 @@ def get_shop_data(url):
 
 
 def search_prefecture():
-    res = create_get_request('https://tabelog.com/')
+    site_map_url = 'https://tabelog.com/sitemap/'
+    res = create_get_request(site_map_url)
     bs_obj = BeautifulSoup(res.text, 'lxml')
-    prefectures = bs_obj.findAll('li', {'class':'rsttop-search__pref-list-item'})
+    prefectures = bs_obj.findAll('ul', {'class':'clearfix'})
     for prefecture in prefectures:
-        pre_url = prefecture.find('a')
-        if 'href' in pre_url.attrs:
-            search_shop(pre_url.attrs['href'])
+        if 'id' in prefecture.attrs:
+            continue
+        pre_links = prefecture.findAll('a')
+        for pre_link in pre_links:
+            if 'href' in pre_link.attrs:
+                pre_url = site_map_url.replace('/sitemap/', pre_link.attrs['href'])
+                search_region(pre_url)
 
 
-def search_shop(shop_list_page_url):
-    res = create_get_request(shop_list_page_url)
+def search_region(pre_url):
+    res = create_get_request(pre_url)
     bs_obj = BeautifulSoup(res.text, 'lxml')
-    shop_urls = bs_obj.findAll('a', {'class':'list-rst__rst-name-target cpy-rst-name'})
-    for shop_url in shop_urls:
-        if 'href' in shop_url.attrs:
-            get_shop_data(shop_url.attrs['href'])
-    try:
-        next_button = bs_obj.find('a',{'class':'page-move__target page-move__target--next'})
-        if 'href' in next_button.attrs:
-            next_page_url = next_button.attrs['href']
-            print(next_page_url)
-            search_shop(next_page_url)
-    except:
-        return
+    region_list = bs_obj.find('ul', {'class':'clearfix'})
+    regions = region_list.findAll('a')
+    for region in regions:
+        if 'href' in region.attrs:
+            region_url = region.attrs['href']
+            search_initial(region_url)
+
+def search_initial(region_url):
+    res = create_get_request(region_url)
+    bs_obj = BeautifulSoup(res.text, 'lxml')
+    tag_list = bs_obj.find('div', {'class':'taglist'})
+    tags = tag_list.findAll('a')
+    for tag in tags:
+        if 'href' in tag.attrs:
+            tag_url = tag.attrs['href']
+            search_shop(tag_url)
 
 
-#get_shop_data('https://tabelog.com/aomori/A0203/A020301/2008975/')
+def search_shop(tag_url):
+    res = create_get_request(tag_url)
+    bs_obj = BeautifulSoup(res.text, 'lxml')
+    shops = bs_obj.findAll('div', {'class':'item'})
+    for shop in shops:
+        shop_tag = shop.find('a')
+        if 'href' in shop_tag.attrs:
+            shop_url_short = shop_tag.attrs['href']
+            shop_url = 'https://tabelog.com' + shop_url_short
+            get_shop_data(shop_url)
+
+
 search_prefecture()

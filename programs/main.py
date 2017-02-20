@@ -47,7 +47,6 @@ def create_csv(csv_path, name, address, url):
     csv_file = open(csv_path, 'a', newline='')
     try:
         writer = csv.writer(csv_file)
-        writer.writerow(('name', 'address', 'url'))
         writer.writerow((name, address, url))
     finally:
         csv_file.close()
@@ -110,4 +109,5 @@ def search_shop(tag_url):
             get_shop_data(shop_url)
 
 
-search_prefecture()
+#search_prefecture()
+search_region('https://tabelog.com/sitemap/tokyo/')

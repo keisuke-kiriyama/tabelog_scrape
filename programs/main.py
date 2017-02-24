@@ -8,6 +8,9 @@ import pymysql.cursors
 
 request_count = 0
 
+class MyRequestError(Exception):
+    pass
+
 def create_get_request(url):
     global request_count
     request_count += 1
@@ -21,13 +24,16 @@ def create_get_request(url):
         res = session.get(url, headers=headers)
     except requests.exceptions.Timeout as err:
         error_log(err, url)
-        return -1
+        raise MyRequestError("request timout err %s" % err)
     except requests.exceptions.TooManyRedirects as err:
         error_log(err, url)
-        return -1
+        raise MyRequestError("request too many redirect err %s" % err)
     except requests.exceptions.RequestException as err:
         error_log(err, url)
-        return -1
+        raise MyRequestError("request exception err %s" % err)
+    except Exception as err:
+        print(err)
+        raise MyRequestError("request unknown err %s" % err)
     return res
 
 

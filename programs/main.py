@@ -11,7 +11,7 @@ request_count = 0
 class MyRequestError(Exception):
     pass
 
-def create_get_request(url):
+def do_http_get(url):
     global request_count
     request_count += 1
     time.sleep(3)
@@ -60,7 +60,7 @@ def create_csv(csv_path, name, address, url):
 
 
 def get_shop_data(url):
-    res = create_get_request(url)
+    res = do_http_get(url)
     bs_obj = BeautifulSoup(res.text, 'lxml')
     name = get_name(bs_obj)
     address = get_address(bs_obj)
@@ -69,9 +69,9 @@ def get_shop_data(url):
     save_to_db(name, address, url)
 
 
-def search_prefecture():
+def crawl_prefecture():
     site_map_url = 'https://tabelog.com/sitemap/'
-    res = create_get_request(site_map_url)
+    res = do_http_get(site_map_url)
     bs_obj = BeautifulSoup(res.text, 'lxml')
     prefectures = bs_obj.findAll('ul', {'class':'clearfix'})
     for prefecture in prefectures:
@@ -82,14 +82,14 @@ def search_prefecture():
             if 'href' in pre_link.attrs:
                 pre_url = site_map_url.replace('/sitemap/', pre_link.attrs['href'])
                 try:
-                    search_region(pre_url)
+                    crawl_region(pre_url)
                 except:
                     continue
 
 
-def search_region(pre_url):
+def crawl_region(pre_url):
     try:
-        res = create_get_request(pre_url)
+        res = do_http_get(pre_url)
         bs_obj = BeautifulSoup(res.text, 'lxml')
     except:
         return -1
@@ -99,14 +99,14 @@ def search_region(pre_url):
         if 'href' in region.attrs:
             region_url = region.attrs['href']
             try:
-                search_initial(region_url)
+                crawl_initial(region_url)
             except:
                 continue
 
 
-def search_initial(region_url):
+def crawl_initial(region_url):
     try:
-        res = create_get_request(region_url)
+        res = do_http_get(region_url)
         bs_obj = BeautifulSoup(res.text, 'lxml')
     except:
         return -1
@@ -116,14 +116,14 @@ def search_initial(region_url):
         if 'href' in tag.attrs:
             tag_url = tag.attrs['href']
             try:
-                search_shop(tag_url)
+                crawl_shop(tag_url)
             except:
                 continue
 
 
-def search_shop(tag_url):
+def crawl_shop(tag_url):
     try:
-        res = create_get_request(tag_url)
+        res = do_http_get(tag_url)
         bs_obj = BeautifulSoup(res.text, 'lxml')
     except:
         return -1
@@ -161,5 +161,9 @@ def error_log(err, url):
     log_file.close()
 
 
-search_prefecture()
-#search_region('https://tabelog.com/sitemap/tokyo/')
+def run_crawling():
+    crawl_prefecture()
+
+
+if __name__ == '__main__':
+    run_crawling()

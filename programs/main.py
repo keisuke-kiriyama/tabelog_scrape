@@ -88,11 +88,8 @@ def crawl_prefecture():
 
 
 def crawl_region(pre_url):
-    try:
-        res = do_http_get(pre_url)
-        bs_obj = BeautifulSoup(res.text, 'lxml')
-    except:
-        return -1
+    res = do_http_get(pre_url)
+    bs_obj = BeautifulSoup(res.text, 'lxml')
     region_list = bs_obj.find('ul', {'class':'clearfix'})
     regions = region_list.findAll('a')
     for region in regions:
@@ -105,11 +102,8 @@ def crawl_region(pre_url):
 
 
 def crawl_initial(region_url):
-    try:
-        res = do_http_get(region_url)
-        bs_obj = BeautifulSoup(res.text, 'lxml')
-    except:
-        return -1
+    res = do_http_get(region_url)
+    bs_obj = BeautifulSoup(res.text, 'lxml')
     tag_list = bs_obj.find('div', {'class':'taglist'})
     tags = tag_list.findAll('a')
     for tag in tags:
@@ -122,11 +116,8 @@ def crawl_initial(region_url):
 
 
 def crawl_shop(tag_url):
-    try:
-        res = do_http_get(tag_url)
-        bs_obj = BeautifulSoup(res.text, 'lxml')
-    except:
-        return -1
+    res = do_http_get(tag_url)
+    bs_obj = BeautifulSoup(res.text, 'lxml')
     shops = bs_obj.findAll('div', {'class':'item'})
     for shop in shops:
         shop_tag = shop.find('a')

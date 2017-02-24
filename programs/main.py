@@ -2,7 +2,6 @@ import requests
 from bs4 import BeautifulSoup
 import csv
 import re
-import sys
 import time
 import pymysql.cursors
 
@@ -21,14 +20,14 @@ def create_get_request(url):
     try:
         res = session.get(url, headers=headers)
     except requests.exceptions.Timeout as err:
-        print(err)
-        sys.exit(1)
+        error_log(err, url)
+        return -1
     except requests.exceptions.TooManyRedirects as err:
-        print(err)
-        sys.exit(1)
+        error_log(err, url)
+        return -1
     except requests.exceptions.RequestException as err:
-        print(err)
-        sys.exit(1)
+        error_log(err, url)
+        return -1
     return res
 
 
@@ -61,7 +60,7 @@ def get_shop_data(url):
     address = get_address(bs_obj)
     print(name, address, url)
     create_csv('../files/shop_data.csv', name, address, url)
-    save_to_db(str(name), str(address), str(url))
+    save_to_db(name, address, url)
 
 
 def search_prefecture():
@@ -76,40 +75,63 @@ def search_prefecture():
         for pre_link in pre_links:
             if 'href' in pre_link.attrs:
                 pre_url = site_map_url.replace('/sitemap/', pre_link.attrs['href'])
-                search_region(pre_url)
+                try:
+                    search_region(pre_url)
+                except:
+                    continue
 
 
 def search_region(pre_url):
-    res = create_get_request(pre_url)
-    bs_obj = BeautifulSoup(res.text, 'lxml')
+    try:
+        res = create_get_request(pre_url)
+        bs_obj = BeautifulSoup(res.text, 'lxml')
+    except:
+        return -1
     region_list = bs_obj.find('ul', {'class':'clearfix'})
     regions = region_list.findAll('a')
     for region in regions:
         if 'href' in region.attrs:
             region_url = region.attrs['href']
-            search_initial(region_url)
+            try:
+                search_initial(region_url)
+            except:
+                continue
+
 
 def search_initial(region_url):
-    res = create_get_request(region_url)
-    bs_obj = BeautifulSoup(res.text, 'lxml')
+    try:
+        res = create_get_request(region_url)
+        bs_obj = BeautifulSoup(res.text, 'lxml')
+    except:
+        return -1
     tag_list = bs_obj.find('div', {'class':'taglist'})
     tags = tag_list.findAll('a')
     for tag in tags:
         if 'href' in tag.attrs:
             tag_url = tag.attrs['href']
-            search_shop(tag_url)
+            try:
+                search_shop(tag_url)
+            except:
+                continue
 
 
 def search_shop(tag_url):
-    res = create_get_request(tag_url)
-    bs_obj = BeautifulSoup(res.text, 'lxml')
+    try:
+        res = create_get_request(tag_url)
+        bs_obj = BeautifulSoup(res.text, 'lxml')
+    except:
+        return -1
     shops = bs_obj.findAll('div', {'class':'item'})
     for shop in shops:
         shop_tag = shop.find('a')
         if 'href' in shop_tag.attrs:
             shop_url_short = shop_tag.attrs['href']
             shop_url = 'https://tabelog.com' + shop_url_short
-            get_shop_data(shop_url)
+            try:
+                get_shop_data(shop_url)
+            except:
+                continue
+
 
 def save_to_db(name, address, url):
     connection = pymysql.connect(host='localhost',
@@ -124,6 +146,13 @@ def save_to_db(name, address, url):
         connection.commit()
     finally:
         connection.close()
+
+
+def error_log(err, url):
+    log_file = open('../files/error.log', 'a')
+    log_file.write(url)
+    log_file.write(err)
+    log_file.close()
 
 
 search_prefecture()

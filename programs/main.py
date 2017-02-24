@@ -4,6 +4,8 @@ import csv
 import re
 import sys
 import time
+import pymysql.cursors
+
 
 request_count = 0
 
@@ -59,6 +61,7 @@ def get_shop_data(url):
     address = get_address(bs_obj)
     print(name, address, url)
     create_csv('../files/shop_data.csv', name, address, url)
+    save_to_db(str(name), str(address), str(url))
 
 
 def search_prefecture():
@@ -108,6 +111,20 @@ def search_shop(tag_url):
             shop_url = 'https://tabelog.com' + shop_url_short
             get_shop_data(shop_url)
 
+def save_to_db(name, address, url):
+    connection = pymysql.connect(host='localhost',
+                                 user='root',
+                                 db='shop_data',
+                                 charset='utf8mb4',
+                                 cursorclass=pymysql.cursors.DictCursor)
+    try:
+        with connection.cursor() as cursor:
+            sql = "INSERT INTO shop_data (name, address, url) VALUES (%s, %s, %s);"
+            cursor.execute(sql, (name, address, url))
+        connection.commit()
+    finally:
+        connection.close()
 
-#search_prefecture()
-search_region('https://tabelog.com/sitemap/tokyo/')
+
+search_prefecture()
+#search_region('https://tabelog.com/sitemap/tokyo/')
